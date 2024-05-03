@@ -1,0 +1,15 @@
+[package]
+name = "feistelnetwork"
+authors = ["niri81"]
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hex = "0.4.3"
+
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ["html_reports"] }
+
+[[bench]]
+name = "sbox_benchmark"
+harness = false
