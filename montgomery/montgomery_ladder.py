@@ -2,7 +2,7 @@ import argparse
 import math
 
 
-def ladder(a: int, k: int, N: int) -> int:
+def ladder(a: int, k: int, N: int, debug=False) -> int:
     """
     Calculates the given term using the montgomery ladder algorithm
     :param a: base
@@ -13,7 +13,8 @@ def ladder(a: int, k: int, N: int) -> int:
     x = 1
     y = a % N
 
-    print("Step 0: x =", x, ", y =", y)
+    if debug:
+        print("Step 0: x =", x, ", y =", y)
 
     # Get bit length l of k (using log2) and generate a list [l, l-1, ..., 1, 0] that is then iterated
     for i in range(math.ceil(math.log(k, 2)) - 1, -1, -1):
@@ -27,7 +28,8 @@ def ladder(a: int, k: int, N: int) -> int:
             y = (y * y) % N
 
         # Print out step overview
-        print(f"After Step {math.ceil(math.log(k, 2)) - i}: i = {i}, x = {x}, y = {y}, b_i was: {(k >> i) & 0x01}")
+        if debug:
+            print(f"After Step {math.ceil(math.log(k, 2)) - i}: i = {i}, x = {x}, y = {y}, b_i was: {(k >> i) & 0x01}")
 
     return x
 
