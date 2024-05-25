@@ -1,5 +1,4 @@
 use clap::{Parser, Subcommand};
-use log;
 use std::process::exit;
 
 #[derive(Parser)]
@@ -33,6 +32,12 @@ enum Commands {
     },
     #[command(about = "Performs inversion")]
     Inv { element: i128, module: i128 },
+    #[command(about = "Performs raising to the power")]
+    Pow {
+        element: i128,
+        power: i128,
+        module: i128,
+    },
     #[command(about = "Performs reduction")]
     Red { element: i128, module: i128 },
 }
@@ -54,6 +59,10 @@ impl FiniteField {
         (num1 * num2) % self.module
     }
 
+    fn power(&self, num1: &u64, num2: &u32) -> u64 {
+        (num1.pow(*num2)) % self.module
+    }
+
     fn bruteforce_inverse(&self, element: &u64) -> Result<u64, String> {
         for i in 1..self.module {
             if (element * i) % self.module == 1 {
@@ -71,7 +80,7 @@ impl FiniteField {
         }
 
         match u64::try_from(element) {
-            Ok(val) => val,
+            Ok(val) => val % self.module,
             Err(_) => {
                 log::error!(
                     "Could not convert input {} to element after normalization",
@@ -117,6 +126,31 @@ fn main() {
             println!(
                 "Result after multiplication is: {} mod {}",
                 field.multiply(&field.normalize_input(num1), &field.normalize_input(num2)),
+                field.module
+            );
+        }
+        Commands::Pow {
+            element,
+            power,
+            module,
+        } => {
+            let field = init_field(module);
+
+            println!(
+                "Result after raising to the power is: {} mod {}",
+                field.power(
+                    &field.normalize_input(element),
+                    &match u32::try_from(*power) {
+                        Ok(val) => val,
+                        Err(_) => {
+                            log::error!(
+                                "Could not convert input {} to element after normalization",
+                                module
+                            );
+                            exit(-1);
+                        }
+                    }
+                ),
                 field.module
             );
         }
