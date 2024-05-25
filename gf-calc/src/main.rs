@@ -1,5 +1,4 @@
 use clap::{Parser, Subcommand};
-use log;
 use std::{cmp::Ordering, num::TryFromIntError, process::exit};
 
 #[derive(Parser)]
@@ -11,7 +10,6 @@ use std::{cmp::Ordering, num::TryFromIntError, process::exit};
     Supported operations are Addition, Multiplication, Inversion and MixColumns with a predefined Matrix",
     help_template = "{about-section}\nBy:\t\t{author}\nVersion:\t{version} \n\n {usage-heading} {usage} \n {all-args} {tab}"
 )]
-
 #[command(propagate_version = true)]
 struct Cli {
     #[command(subcommand)]
@@ -55,9 +53,15 @@ impl GaloisField {
 
         for i in (0..8).rev() {
             if (values.1 >> i) & 1 == 1 {
-                log::debug!("bit {i} is set, proceeding with leftshift. num2 is: {:#b}", num2);
+                log::debug!(
+                    "bit {i} is set, proceeding with leftshift. num2 is: {:#b}",
+                    num2
+                );
                 temp ^= values.0 << i;
-                log::debug!("temp is now after leftshift and XOR with previous value: {:#b}", temp);
+                log::debug!(
+                    "temp is now after leftshift and XOR with previous value: {:#b}",
+                    temp
+                );
 
                 // if one of bits 8..15 is set
                 while temp >> 8 > 0 {
@@ -79,7 +83,7 @@ impl GaloisField {
 
     /// Performs an adapted MixColumns operation (originally known from AES) in a given [GaloisField] with a predefined matrix
     fn mix_columns(&self, block: &[u8; 4]) -> [u8; 4] {
-        let mut temp = block.clone();
+        let mut temp = *block;
         // same order as in AES
         const M: [u8; 4] = [0x59, 0x4f, 0x4c, 0x4f];
 
@@ -87,18 +91,14 @@ impl GaloisField {
             for j in 0..2 {
                 // this is some formula I came up with after writing all operations out
                 temp[2 * index + j] = addition(
-                    &self.multiply(&block[2 * index], &M[j]).expect(&format!(
-                        "Error during multiplication of {:#04x}, {:#04x}. index: {index}, j: {j}",
+                    &self.multiply(&block[2 * index], &M[j]).unwrap_or_else(|_| panic!("Error during multiplication of {:#04x}, {:#04x}. index: {index}, j: {j}",
                         block[2 * index],
-                        M[j]
-                    )),
+                        M[j])),
                     &self
                         .multiply(&block[2 * index + 1], &M[j + 2])
-                        .expect(&format!(
-                        "Error during multiplication of {:#04x}, {:#04x}. index: {index}, j: {j}",
+                        .unwrap_or_else(|_| panic!("Error during multiplication of {:#04x}, {:#04x}. index: {index}, j: {j}",
                         block[2 * index + 1],
-                        M[j + 2]
-                    )),
+                        M[j + 2])),
                 );
             }
         }
@@ -108,18 +108,13 @@ impl GaloisField {
 
     /// Determines the bruteforce in a given [GaloisField] via bruteforce
     fn bruteforce_inverse(&self, value: &u8) -> Option<u8> {
-        for i in 0..u8::MAX {
-            if self.multiply(value, &i) == Ok(1) {
-                return Option::Some(i);
-            }
-        }
-        return Option::None;
+        (0..u8::MAX).find(|&i| self.multiply(value, &i) == Ok(1))
     }
 }
 
 /// Performs addition in GF(2^8)
 pub fn addition(num1: &u8, num2: &u8) -> u8 {
-    return num1 ^ num2;
+    num1 ^ num2
 }
 
 /// A nice generic input parser
@@ -189,7 +184,7 @@ fn main() {
                 "Inverse to {:#04x} is: {:#04x}",
                 element,
                 gf.bruteforce_inverse(element)
-                    .expect(&format!("No inverse found for element {:#04x}", element))
+                    .unwrap_or_else(|| panic!("No inverse found for element {:#04x}", element))
             );
         }
     }
